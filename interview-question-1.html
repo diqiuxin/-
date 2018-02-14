@@ -181,57 +181,67 @@
  <body>
     <script>
       // 什么是闭包：
-      // “函数”和“函数内部能访问到的变量（也叫环境）”的总和，就是一个闭包。
-      // JavaScript有两种作用域：全局作用域和函数作用域。函数内部可以直接读取全局变量。但是，在函数外部无法读取函数内部声明的变量。换言之，如果一个函数，使用了它范围外的变量，那么‘这个函数+这个变量’就叫做闭包。
+      // 闭包是 JS 函数作用域的副产品，由于JS函数内部可以使用函数外部的变量，所以正好符合闭包的定义，而不是JS故意使用闭包。
+      // 闭包的作用就是 间接访问一个变量，例如函数中的局部变量，在函数执行完毕就会死掉，在其他地方是访问不到的。
+      //    而闭包就是用来暴露一个访问器（函数），用于间接访问到这个变量。闭包还可以封装数据和暂存数据
+      // JavaScript有两种作用域：全局作用域和函数作用域。函数内部可以直接读取全局变量。
+      //    但是，在函数外部无法读取函数内部声明的变量。换言之，如果一个函数，使用了它范围外的变量，那么‘这个函数+这个变量’就叫做闭包。
     
-      function f1() {
-        let n = 1;
-        function f2() {
-          console.log(n);
-        }
-        return f2;
-      } //这段代码中，函数 f2 和变量 n 的总和就叫做闭包
+      var local = '变量';
+      function fn(){
+          console.log(local);
+      }  // 这就是闭包
       
-      // 闭包的用途：
-      // 1.从外部读取函数内部的变量。
-      function f1() {
-        let n = 9;
-        function f2() {
-          console.log(n);
-        }
-        return f2;
-      } 
-      let result = f1();
-      result(); // 9
-      //这段代码中，函数f1的返回值就是函数f2，由于f2可以读取f1的内部变量，所以就可以在外部获得f1的内部变量了。
-      
-      // 2.让这些变量始终保持在内存中。
-      function f1(n) {
-        return function () {
-          return n++;
+      // 结果缓存
+      // 设想我们有一个处理过程很耗时的函数对象，每次调用都会花费很长时间，那么我们就需要将计算出来的值存储起来，当调用这个函数的时候，首先在缓存中查找，如果找不到，则进行计算，然后更新缓存并返回值，如果找了，直接返回查找到的值即可。
+      // 闭包因为它不会释放外部的引用，从而函数内部的值可以得以保留。
+      var CachedSearchBox = (function(){
+        var cache = {},
+        count = [];
+        return {
+          attachSearchBox : function(dsid){
+            if(dsid in cache){//如果结果在缓存中
+                return cache[dsid];//直接返回缓存中的对象
+            }
+            var fsb = new uikit.webctrl.SearchBox(dsid); //新建
+            cache[dsid] = fsb;//更新缓存
+            if(count.length > 100){//保正缓存的大小<=100
+                delete cache[count.shift()];
+            }
+            return fsb;
+          },
+          clearSearchBox : function(dsid){
+            if(dsid in cache){
+              cache[dsid].clearSelection();
+            }
+          }
         };
-      }
-      let a1 = f1(1);
-      a1() // 1
-      a1() // 2
-      a1() // 3
-      //这段代码中，闭包使得内部变量记住上一次调用时的运算结果。
+      })();
+      CachedSearchBox.attachSearchBox("input1");
+      // 当第二次调用 CachedSearchBox.attachSerachBox(“input1”)的时候，可以从缓存中取出该对象，而不用再去创建一个新的 searchbox 对象。
       
-      // 3.封装对象的私有属性和私有方法。
-      function f1(n) {
-        return function () {
-          return n++;
-        };
-      }
-      let a1 = f1(1);
-      a1() // 1
-      a1() // 2
-      a1() // 3
-      let a2 = f1(5);
-      a2() // 5
-      a2() // 6
-      a2() // 7
-      //这段代码中，a1 和 a2 是相互独立的，各自返回自己的私有变量。   
+      // 实现封装
+      // 在 person 之外的地方无法访问其内部的变量，而通过提供闭包的形式来访问：
+      var person = function(){
+        //变量作用域为函数内部，外部无法访问
+        var name = "default";
+        return {
+          getName : function(){
+            return name;
+          },
+          setName : function(newName){
+            name = newName;
+          }
+        }
+      }();
+      print(person.name);//直接访问，结果为undefined
+      print(person.getName());
+      person.setName("abruzzi");
+      print(person.getName());
+      //得到结果如下：
+      //undefined
+      //default
+      //abruzzi
     </script>
  </body>
 <!-- --------------------------------------------------5---------------------------------------------- -->
@@ -390,7 +400,8 @@
       }
       
       // 方法二  
-      let unique = (array) => Array.from(new Set(array));
+      // let unique = (array) => Array.from(new Set(array));
+      let unique = (array) => [...new Set(array)];  // 精简的函数
       
       console.log(unique(array));
     </script>
